@@ -1,4 +1,4 @@
-# Supplementary script o Vitali et al. 2020 
+# Supplementary script of Vitali et al. 2020 
 
 **BIBLIOGRAPHIC REFERENCE:**
 
