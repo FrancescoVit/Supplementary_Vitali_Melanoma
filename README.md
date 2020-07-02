@@ -4,7 +4,7 @@
 
 **TITLE:**  The gut fungal and bacterial profiles of early stage melanoma patients correlate with histopathological features.
 
-**Authors:**  Francesco Vitali*, Roberta Colucci*, Monica Di Paola, Carlotta De Filippo, Silvia Moretti$, Duccio Cavalieri$
+**Authors:**  Francesco Vitali*, Roberta Colucci*, Monica Di Paola, Massimo Pindo, Carlotta De Filippo, Silvia Moretti$, Duccio Cavalieri$
 
 **DOI:** 
 
