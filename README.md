@@ -13,7 +13,8 @@
 *DESCRIPTION*
 
 
-This repository contains the R code and raw data to replicate analysis in the manuscript.
+This repository contains the R code and raw data to replicate analysis in the manuscript. Until publication of the manuscript, 
+OTUs count data, metada, and taxonomy will only be available upon request.
 
 
 
