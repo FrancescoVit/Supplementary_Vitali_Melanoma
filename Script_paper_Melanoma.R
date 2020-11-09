@@ -79,11 +79,25 @@ qiime_file_16S_initial <- subset_samples(qiime_file_16S_initial, Label != "C17F"
 summary(sample_sums(qiime_file_16S_initial)) # Variation interval 31736 - 172771
 sum(sample_sums(qiime_file_16S_initial))
 
+# Reomve ML sample (after initial MS revision)
+qiime_file_16S_initial <- subset_samples(qiime_file_16S_initial, Pathology != "Leucoderma_Melanoma") %>% # remove otus = 0
+  prune_taxa(taxa_sums(.) > 0, .)
+summary(sample_sums(qiime_file_16S_initial)) # Variation interval 31736 - 172771
+sum(sample_sums(qiime_file_16S_initial))
+
 
 ## otus different from 0
 # converting otu table to 1/0
 otu_16S_10 <- ifelse(otu_16S_ot >0,1,0)
 summary(sample_sums(otu_16S_10))
+
+
+## obtaining rarefaction 
+qiime_file_16S_raref <- rarefy_even_depth(qiime_file_16S_initial, 
+                                          rngseed=1234, 
+                                          sample.size=0.99*min(sample_sums(qiime_file_16S_initial)), 
+                                          replace=F)
+
 
 # CSS scaling
 # singletons remove
@@ -129,10 +143,24 @@ qiime_file_ITS_initial <- subset_samples(qiime_file_ITS_initial, Label != "C17F"
 summary(sample_sums(qiime_file_ITS_initial)) 
 sum(sample_sums(qiime_file_ITS_initial))
 
+# Reomve ML sample (after initial MS revision)
+qiime_file_ITS_initial <- subset_samples(qiime_file_ITS_initial, Pathology != "Leucoderma_Melanoma")  %>% # remove otus = 0
+  prune_taxa(taxa_sums(.) > 0, .)
+summary(sample_sums(qiime_file_ITS_initial)) # Variation interval 31736 - 172771
+sum(sample_sums(qiime_file_ITS_initial))
+
 ## otus different from 0
 # converting otu table to 1/0
 otu_ITS_10 <- ifelse(otu_ITS_ot >0,1,0)
 summary(sample_sums(otu_ITS_10))
+
+
+## obtaining rarefaction 
+qiime_file_ITS_raref <- rarefy_even_depth(qiime_file_ITS_initial, 
+                                          rngseed=1234, 
+                                          sample.size=0.99*min(sample_sums(qiime_file_ITS_initial)), 
+                                          replace=F)
+
 
 # CSS scaling
 doubleton <- genefilter_sample(qiime_file_ITS_initial, filterfun_sample(function(x) x > 1), A=1)
@@ -295,7 +323,7 @@ qiime_file_proportional_oneperc <-  filter_taxa(qiime_file_proportional, functio
 p_phylum <- plot_bar(qiime_file_proportional_oneperc, fill= "Family")
 p_phylum <- p_phylum + theme_linedraw() + scale_fill_manual(values= paletta) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="right") + ylab("Abundance (%)") + xlab("")
-p_phylum + guides(fill = guide_legend(nrow = 15)) + scale_x_discrete(limits=c("Control","Melanoma","Leucoderma_Melanoma"))
+p_phylum + guides(fill = guide_legend(nrow = 15)) + scale_x_discrete(limits=c("Control","Melanoma"))
 
 
 # FUNGI ORDINATION
@@ -330,7 +358,7 @@ qiime_file_proportional_oneperc <-  filter_taxa(qiime_file_proportional, functio
 p_phylum <- plot_bar(qiime_file_proportional_oneperc, fill= "Order")
 p_phylum <- p_phylum + theme_linedraw() + scale_fill_manual(values= paletta) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="right") + ylab("Abundance (%)") + xlab("")
-p_phylum + guides(fill = guide_legend(nrow = 15)) + scale_x_discrete(limits=c("Control","Melanoma","Leucoderma_Melanoma"))
+p_phylum + guides(fill = guide_legend(nrow = 15)) + scale_x_discrete(limits=c("Control","Melanoma"))
 
 
 
@@ -388,44 +416,44 @@ p12 + theme(legend.position="none")
 ## USING microbiome package
 
 
+alphadiv <- microbiome::alpha(subset_samples(qiime_file_16S_raref, Pathology != "Vitiligo"))
 
-alphadiv <- microbiome::alpha(subset_samples(qiime_file_16S_initial, Pathology != "Vitiligo"))
-
-df <- as(sample_data(subset_samples(qiime_file_16S_initial, Pathology != "Vitiligo")), "data.frame")
+df <- as(sample_data(subset_samples(qiime_file_16S_raref, Pathology != "Vitiligo")), "data.frame")
 
 df$rich <- alphadiv$observed
 df$shan <- alphadiv$diversity_shannon
 df$eve <- alphadiv$evenness_pielou
 df$sim <- alphadiv$diversity_inverse_simpson
 
-df$Pathology <- factor(df$Pathology, levels = c("Control", "Melanoma", "Leucoderma_Melanoma"))
+df$Pathology <- factor(df$Pathology, levels = c("Control", "Melanoma"))
 
 # Plot on Pathology
 variabile_plot = "Pathology"
-my_comparisons <- list(c("Control","Melanoma"), 
-                       c("Control","Leucoderma_Melanoma"), 
-                       c("Melanoma","Leucoderma_Melanoma"))
+my_comparisons <- list(c("Control","Melanoma"))
 
-p_rich <- ggdotplot(data = df, x = variabile_plot, y = "rich", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_rich <- p_rich + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
-p_rich <- p_rich + ylab("Richness (n° of OTUs)") + scale_fill_aaas()
+p_rich_b <- ggboxplot(data = df, x = variabile_plot, y = "rich", add = "jitter", size = 0.5, fill = variabile_plot, outlier.shape = NA)
+p_rich_b <- p_rich_b + stat_compare_means(method = "t.test", comparisons = my_comparisons)                   # Add global p-value
+p_rich_b <- p_rich_b + ylab("Richness (n° of OTUs)") + scale_fill_aaas() + rremove(object = "legend")
 p_shan <- ggdotplot(data = df, x = variabile_plot, y = "shan", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_shan <- p_shan + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
+p_shan <- p_shan + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
 p_shan <- p_shan + ylab("Shannon's Index") + scale_fill_aaas()
-p_eve <- ggdotplot(data = df, x = variabile_plot, y = "eve", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_eve <- p_eve + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
-p_eve <- p_eve + ylab("Evenness Index") + scale_fill_aaas()
+p_eve_b <- ggboxplot(data = df, x = variabile_plot, y = "eve", add = "jitter", size = 0.5, fill = variabile_plot, outlier.shape = NA)
+p_eve_b <- p_eve_b + stat_compare_means(method = "t.test", comparisons = my_comparisons)                   # Add global p-value
+p_eve_b <- p_eve_b + ylab("Evenness Index") + scale_fill_aaas() + rremove(object = "legend")
 p_sim <- ggdotplot(data = df, x = variabile_plot, y = "sim", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_sim <- p_sim + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
+p_sim <- p_sim + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
 p_sim <- p_sim + ylab("Simpson Index") + scale_fill_aaas()
+# 
+ plot_grid(p_rich, p_eve,p_shan,p_sim, ncol = 4)
 
-plot_grid(p_rich, p_eve,p_shan,p_sim, ncol = 4)
+plot_grid(p_rich_b, p_eve_b, ncol = 2)
 
 #### Fungi
 
-alphadiv <- microbiome::alpha(subset_samples(qiime_file_ITS_initial, Pathology != "Vitiligo"))
 
-df <- as(sample_data(subset_samples(qiime_file_ITS_initial, Pathology != "Vitiligo")), "data.frame")
+alphadiv <- microbiome::alpha(qiime_file_ITS_raref, index = c("observed", "evenness_pielou", "diversity_shannon", "diversity_inverse_simpson"))
+
+df <- as(sample_data(subset_samples(qiime_file_ITS_raref, Pathology != "Vitiligo")), "data.frame")
 
 df$rich <- alphadiv$observed
 df$shan <- alphadiv$diversity_shannon
@@ -437,25 +465,24 @@ df$Pathology <- factor(df$Pathology, levels = c("Control", "Melanoma", "Leucoder
 
 # Plot on Pathology
 variabile_plot = "Pathology"
-my_comparisons <- list(c("Control","Melanoma"), 
-                       c("Control","Leucoderma_Melanoma"), 
-                       c("Melanoma","Leucoderma_Melanoma"))
+my_comparisons <- list(c("Control","Melanoma"))
 
-p_rich <- ggdotplot(data = df, x = variabile_plot, y = "rich", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_rich <- p_rich + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
-p_rich <- p_rich + ylab("Richness (n° of OTUs)") + scale_fill_aaas()
+p_rich_f <- ggboxplot(data = df, x = variabile_plot, y = "rich", add = "jitter", size = 0.5, fill = variabile_plot, outlier.shape = NA)
+p_rich_f <- p_rich_f + stat_compare_means(method = "t.test", comparisons = my_comparisons)                   # Add global p-value
+p_rich_f <- p_rich_f + ylab("Richness (n° of OTUs)") + scale_fill_aaas() + rremove("legend")
 p_shan <- ggdotplot(data = df, x = variabile_plot, y = "shan", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_shan <- p_shan + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
+p_shan <- p_shan + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
 p_shan <- p_shan + ylab("Shannon's Index") + scale_fill_aaas()
-p_eve <- ggdotplot(data = df, x = variabile_plot, y = "eve", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_eve <- p_eve + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
-p_eve <- p_eve + ylab("Evenness Index") + scale_fill_aaas()
+p_eve_f <- ggboxplot(data = df, x = variabile_plot, y = "eve", add = "jitter", size = 0.5, fill = variabile_plot, outlier.shape = NA)
+p_eve_f <- p_eve_f + stat_compare_means(method = "t.test", comparisons = my_comparisons)                   # Add global p-value
+p_eve_f <- p_eve_f + ylab("Evenness Index") + scale_fill_aaas() + rremove("legend")
 p_sim <- ggdotplot(data = df, x = variabile_plot, y = "sim", add = "mean_sd", size = 0.5, fill = variabile_plot)
-#p_sim <- p_sim + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
+p_sim <- p_sim + stat_compare_means(method = "wilcox.test", comparisons = my_comparisons)                   # Add global p-value
 p_sim <- p_sim + ylab("Simpson Index")+ scale_fill_aaas()
 
-plot_grid(p_rich, p_eve,p_shan,p_sim, ncol = 4)
+plot_grid(p_rich_f, p_shan, p_eve_f, p_sim, ncol = 4)
 
+plot_grid(p_rich_b, p_eve_b, p_rich_f, p_eve_f, ncol = 2)
 
 ###################################################
 ###### BUILDING SUPPLEMENTARY FIGURE 1 and 2 ######
@@ -502,7 +529,9 @@ sample_data(mel_con_bact) <- df_ord
 p_phylum <- plot_bar(otu_table_collapsed, fill= "Family", x = "Label")
 p_phylum <- p_phylum + theme_linedraw() + scale_fill_manual(values= paletta) + coord_flip() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ylab("Abundance CSS/log scaled") + xlab("")
-p_phylum + guides(fill = guide_legend(nrow = 22))
+p_phylum <- p_phylum + guides(fill = guide_legend(nrow = 22))
+
+
 
 ##############
 #### FUNGI ###
@@ -548,7 +577,7 @@ sample_data(mel_con_fung) <- df_ord
 p_phylum <- plot_bar(otu_table_collapsed, fill= "Order", x = "Label")
 p_phylum <- p_phylum + theme_linedraw() + scale_fill_manual(values= paletta) + coord_flip() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ylab("Abundance CSS/log scaled") + xlab("")
-p_phylum + guides(fill = guide_legend(nrow = 19))
+p_phylum <- p_phylum + guides(fill = guide_legend(nrow = 19))
 
 
 
@@ -639,7 +668,7 @@ sample_data(mel_con_NOcss)$Pathology <- facto
 mel_con_noM6_NOcss <- subset_samples(mel_con_NOcss, Label != "M6F")
 
 
-## TEST ON PATHOLOGY
+  ## TEST ON PATHOLOGY
 
 # following for reference https://bioconductor.org/packages/devel/bioc/vignettes/phyloseq/inst/doc/phyloseq-mixture-models.html
 kosticB <- mel_con_noM6_NOcss
