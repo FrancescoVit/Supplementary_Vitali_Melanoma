@@ -2,7 +2,7 @@
 
 **BIBLIOGRAPHIC REFERENCE:**
 
-**TITLE:**  The gut fungal and bacterial profiles of early stage melanoma patients correlate with histopathological features.
+**TITLE:**  Early melanoma invasivity correlates with gut fungal and bacterial profiles.
 
 **Authors:**  Francesco Vitali*, Roberta Colucci*, Monica Di Paola, Massimo Pindo, Carlotta De Filippo, Silvia Moretti$, Duccio Cavalieri$
 
